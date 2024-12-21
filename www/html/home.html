@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <title>Page Principale - UVSQ</title>
+    <link rel="stylesheet" href="../css/commun.css">
+    <link rel="stylesheet" href="../css/home.css">
+</head>
+
+<body>
+    <div class="main">
+        <h1 class="title">Bienvenue <span class="prenom"></span> !</h1>
+        <!-- Menu EDT/NOTES/ABSCENCES -->
+        <div class="menu">
+            <button class="btn" id="edt">Emploi du temps</button>
+            <button class="btn" id="notes">Notes</button>
+            <button class="btn" id="absences">Absences</button>
+            <button class="btn" id="settings">Paramètres</button>
+        </div>
+        <button class="btn btn-logout" id="logout">Déconnexion</button>
+    </div>
+
+    <script type="module" src="../js/home.js"></script>
+</body>
+
+</html>

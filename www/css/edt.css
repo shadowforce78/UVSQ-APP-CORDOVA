@@ -1,0 +1,320 @@
+:root {
+    --primary-color: #007bff;
+    --primary-light: #e3f2fd;
+    --primary-dark: #0056b3;
+    --gray-light: #f5f5f5;
+    --gray-border: #e0e0e0;
+    --text-primary: #333;
+    --text-secondary: #666;
+    --shadow: 0 2px 4px rgba(0,0,0,0.1);
+    --course-td: #4CAF50;
+    --course-td-light: #E8F5E9;
+    --course-cm: #FF9800;
+    --course-cm-light: #FFF3E0;
+    --course-tp: #E91E63;
+    --course-tp-light: #FCE4EC;
+    --course-other: #9C27B0;
+    --course-other-light: #F3E5F5;
+    --bg-main: #f5f7fa;
+    --bg-component: white;
+    --text-color: #2d3436;
+    --border-color: #e0e0e0;
+}
+
+[data-theme="dark"] {
+    --primary-color: #007bff;
+    --primary-light: #004ba0;
+    --primary-dark: #0056b3;
+    --bg-main: #1a1a1a;
+    --bg-component: #2d2d2d;
+    --text-color: #ffffff;
+    --border-color: #404040;
+    --gray-light: #2d2d2d;
+    --gray-border: #404040;
+    --text-primary: #ffffff;
+    --text-secondary: #bbbbbb;
+    --shadow: 0 2px 4px rgba(0,0,0,0.3);
+    --course-td-light: rgba(76, 175, 80, 0.3);
+    --course-cm-light: rgba(255, 152, 0, 0.3);
+    --course-tp-light: rgba(233, 30, 99, 0.3);
+    --course-other-light: rgba(156, 39, 176, 0.3);
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-color);
+}
+
+.main {
+    padding: 20px;
+    background-color: var(--bg-main);
+    min-height: 100vh;
+}
+
+.header {
+    margin-bottom: 30px;
+}
+
+.title {
+    font-size: 24px;
+    color: var(--primary-dark);
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+
+.menu {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 30px;
+    padding: 15px;
+    background: var(--bg-component);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+button {
+    background-color: var(--bg-component);
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+button:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.dropbtn {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.back-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    margin-right: auto;
+}
+
+.back-btn:hover {
+    background-color: #c82333;
+}
+
+.schedule-grid {
+    display: grid;
+    grid-template-columns: 60px repeat(5, 1fr); /* 5 colonnes au lieu de 6 */
+    grid-template-rows: 40px repeat(11, 60px); /* header + 11 heures */
+    position: relative;
+    background: var(--bg-component);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.day-header {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background-color: var(--bg-component);
+    font-weight: 500;
+    padding: 10px;
+    border-bottom: 2px solid var(--primary-color);
+    color: var(--text-color);
+}
+
+.time-header {
+    background-color: var(--bg-component);
+    border-bottom: 2px solid var(--primary-color);
+    color: var(--text-color);
+}
+
+.time-slot {
+    height: 60px;
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.8em;
+    padding: 5px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-end;
+    background-color: var(--bg-component);
+    color: var(--text-color);
+}
+
+.hour-start {
+    border-top: 1px solid var(--gray-border);
+    background-color: rgba(0,0,0,0.02);
+}
+
+.time-cell {
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-component);
+    color: var(--text-color);
+}
+
+.events-container {
+    position: absolute;
+    top: 40px; /* hauteur du header */
+    left: 60px; /* largeur de la colonne des heures */
+    right: 0;
+    bottom: 0;
+}
+
+.event {
+    position: absolute;
+    background-color: var(--primary-light);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 4px;
+    padding: 6px;
+    margin: 1px 2px;
+    box-shadow: var(--shadow);
+    transition: transform 0.2s;
+    overflow: hidden;
+    font-size: 0.85em;
+    box-sizing: border-box;
+    color: var(--text-color);
+}
+
+.event:hover {
+    transform: scale(1.01);
+    z-index: 10;
+}
+
+.event.td {
+    background-color: var(--course-td-light);
+    border-left: 3px solid var(--course-td);
+}
+
+.event.cm {
+    background-color: var(--course-cm-light);
+    border-left: 3px solid var(--course-cm);
+}
+
+.event.tp {
+    background-color: var(--course-tp-light);
+    border-left: 3px solid var(--course-tp);
+}
+
+.event.other {
+    background-color: var(--course-other-light);
+    border-left: 3px solid var(--course-other);
+}
+
+.event-time {
+    font-size: 0.75em;
+    line-height: 1.2;
+}
+
+.event-subject {
+    font-size: 0.8em;
+    line-height: 1.3;
+}
+
+.event-details {
+    font-size: 0.75em;
+    line-height: 1.2;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    border: 1px solid var(--gray-border);
+    z-index: 20;
+}
+
+.dropdown.open .dropdown-content {
+    display: block;
+}
+
+.dropdown-content a {
+    color: var(--text-primary);
+    padding: 10px 15px;
+    transition: background-color 0.2s;
+}
+
+.dropdown-content a:hover {
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
+}
+
+.week-label {
+    text-align: center;
+    margin-bottom: 15px;
+    font-size: 1.1em;
+    color: var(--text-primary);
+    padding: 10px;
+    background: var(--bg-component);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+/* Theme toggle styles - même style que les autres pages */
+.theme-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-color);
+    z-index: 1000;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+}
+
+.switch input:checked + .slider {
+    background-color: #007bff;
+}
+
+.switch input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}

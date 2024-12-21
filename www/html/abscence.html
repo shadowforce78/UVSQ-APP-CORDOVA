@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <title>Page Principale</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/abscence.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <button id="backButton" class="back-button">↩ Retour</button>
+            <h1 class="title">Mes Absences</h1>
+            <button id="themeToggle" class="theme-toggle">🌙</button>
+        </div>
+        <div class="main">
+            <!-- Absences will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <script type="module" src="../js/abscence.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, minimum-scale=1.0">
+    <title>Relevé de notes - UVSQ</title>
+    <link rel="stylesheet" href="../css/notes.css">
+</head>
+<body>
+    <header class="page-header" role="banner">
+        <nav class="nav-buttons" role="navigation" aria-label="Navigation principale">
+            <button id="backButton" class="nav-button" aria-label="Retour au menu principal">
+                <span aria-hidden="true">←</span> Retour au menu
+            </button>
+        </nav>
+    </header>
+
+    <main class="main-content" role="main">
+        <h1 class="visually-hidden">Relevé de notes</h1>
+        <div id="grades-container" role="region" aria-label="Liste des UEs et notes"></div>
+    </main>
+
+    <div id="detailModal" class="modal" role="dialog" aria-labelledby="detailModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 id="detailModalTitle"></h2>
+                <button class="close" aria-label="Fermer la fenêtre de détails">&times;</button>
+            </header>
+            <div id="modalContent" role="region"></div>
+        </div>
+    </div>
+
+    <div id="evaluationModal" class="modal" role="dialog" aria-labelledby="evaluationModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <header class="modal-header">
+                <h2 id="evaluationModalTitle">Détails de l'évaluation</h2>
+                <button class="close evaluation-close" aria-label="Fermer la fenêtre d'évaluation">&times;</button>
+            </header>
+            <div id="evaluationModalContent" role="region"></div>
+        </div>
+    </div>
+
+    <script type="module" src="../js/notes.js"></script>
+</body>
+</html>

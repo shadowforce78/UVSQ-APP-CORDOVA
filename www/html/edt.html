@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Emploi Du Temps - UVSQ</title>
+    <link rel="stylesheet" href="../css/edt.css">
+    <style>
+        body {
+            margin: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="theme-toggle">
+        <label class="switch">
+            <input type="checkbox" id="themeToggle">
+            <span class="slider round"></span>
+        </label>
+        <span class="toggle-label">Mode sombre</span>
+    </div>
+    <div class="main">
+        <div class="header">
+            <div class="title">Emploi Du Temps</div>
+            <div class="menu">
+                <button id="back" class="back-btn">Retour</button>
+                <button id="prev">Semaine Précédente</button>
+                <button id="today">Aujourd'hui</button>
+                <button id="next">Semaine Suivante</button>
+                <!-- Dropdown classe -->
+                <div class="dropdown">
+                    <button class="dropbtn">Classe</button>
+                    <div class="dropdown-content">
+                    </div>
+                </div>
+            </div>
+            <div class="week-label"></div>
+            <div class="content"></div>
+
+        </div>
+
+        <script type="module" src="../js/edt.js"></script>
+</body>
+
+</html>

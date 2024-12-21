@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <title>Paramètres - UVSQ</title>
+    <link rel="stylesheet" href="../css/commun.css">
+    <link rel="stylesheet" href="../css/settings.css">
+</head>
+<body>
+    <div class="main">
+        <h1 class="title">Paramètres</h1>
+        <div class="settings-container">
+            <div class="setting-item">
+                <label for="theme">Thème</label>
+                <select id="theme">
+                    <option value="light">Clair</option>
+                    <option value="dark">Sombre</option>
+                </select>
+            </div>
+            <div class="setting-item">
+                <label for="cache">Cache</label>
+                <label class="switch">
+                    <input type="checkbox" id="cache">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        <button class="btn" id="back">Retour</button>
+    </div>
+    <script type="module" src="../js/settings.js"></script>
+</body>
+</html>
