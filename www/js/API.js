@@ -8,27 +8,44 @@ const debug = (message, data = null) => {
 // Création d'une classe pour gérer la session
 class Session {
     constructor() {
-        this.cookieJar = '';
+        this.cookieJar = new Map();
         debug('Session initialisée');
+    }
+
+    parseCookies(cookieHeader) {
+        if (!cookieHeader) return;
+        cookieHeader.split(',').forEach(cookie => {
+            const parts = cookie.split(';')[0].trim().split('=');
+            if (parts.length === 2) {
+                this.cookieJar.set(parts[0], parts[1]);
+            }
+        });
+    }
+
+    getCookieString() {
+        return Array.from(this.cookieJar.entries())
+            .map(([key, value]) => `${key}=${value}`)
+            .join('; ');
     }
 
     async fetch(url, options = {}) {
         debug(`Requête vers: ${url}`, { 
             method: options.method || 'GET',
             headers: options.headers,
-            cookiesExist: !!this.cookieJar
+            cookiesExist: this.cookieJar.size > 0
         });
 
         // Ajouter les cookies à la requête
-        if (this.cookieJar) {
+        if (this.cookieJar.size > 0) {
             options.headers = {
                 ...options.headers,
-                'Cookie': this.cookieJar
+                'Cookie': this.getCookieString()
             };
         }
 
-        // Configurer pour suivre les redirections
-        options.redirect = 'follow';
+        // Configurer la gestion des redirections
+        options.redirect = 'manual';
+        options.credentials = 'include';
         
         try {
             const response = await fetch(url, options);
@@ -36,11 +53,25 @@ class Session {
                 headers: Object.fromEntries(response.headers.entries())
             });
             
-            // Sauvegarder les nouveaux cookies
+            // Gérer les cookies de la réponse
             const cookies = response.headers.get('set-cookie');
             if (cookies) {
-                this.cookieJar = cookies;
-                debug('Nouveaux cookies sauvegardés', { cookies });
+                this.parseCookies(cookies);
+                debug('Cookies mis à jour', { 
+                    cookieCount: this.cookieJar.size
+                });
+            }
+
+            // Gérer les redirections manuellement
+            if (response.status === 302 || response.status === 301) {
+                const location = response.headers.get('location');
+                if (location) {
+                    debug('Redirection vers', { location });
+                    return this.fetch(location, {
+                        ...options,
+                        method: 'GET'
+                    });
+                }
             }
 
             return response;
@@ -48,6 +79,11 @@ class Session {
             debug('Erreur fetch', { error: error.message });
             throw error;
         }
+    }
+
+    clearCookies() {
+        this.cookieJar.clear();
+        debug('Cookies effacés');
     }
 }
 
@@ -151,6 +187,7 @@ export const edt = async (classe, startDate, endDate) => {
 
 export const connection = async (username, password) => {
     debug('Tentative de connexion', { username });
+    session.clearCookies(); // Reset cookies before new connection attempt
 
     try {
         const loginUrl = "https://cas2.uvsq.fr/cas/login?service=https%3A%2F%2Fbulletins.iut-velizy.uvsq.fr%2Fservices%2FdoAuth.php%3Fhref%3Dhttps%253A%252F%252Fbulletins.iut-velizy.uvsq.fr%252F";
@@ -187,6 +224,12 @@ export const connection = async (username, password) => {
             status: loginResponse.status,
             url: loginResponse.url
         });
+
+        // Suivre explicitement la redirection après le POST
+        const finalResponse = await session.fetch(loginResponse.headers.get('location') || loginUrl);
+        if (!finalResponse.ok) {
+            return { error: "Erreur lors de la redirection" };
+        }
 
         // 3. Récupération des données
         debug('Récupération des données utilisateur');
