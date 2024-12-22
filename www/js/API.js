@@ -1,10 +1,24 @@
+// Fonction de debug
+const debug = (message, data = null) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ${message}`);
+    if (data) console.log(JSON.stringify(data, null, 2));
+};
+
 // Création d'une classe pour gérer la session
 class Session {
     constructor() {
         this.cookieJar = '';
+        debug('Session initialisée');
     }
 
     async fetch(url, options = {}) {
+        debug(`Requête vers: ${url}`, { 
+            method: options.method || 'GET',
+            headers: options.headers,
+            cookiesExist: !!this.cookieJar
+        });
+
         // Ajouter les cookies à la requête
         if (this.cookieJar) {
             options.headers = {
@@ -16,15 +30,24 @@ class Session {
         // Configurer pour suivre les redirections
         options.redirect = 'follow';
         
-        const response = await fetch(url, options);
-        
-        // Sauvegarder les nouveaux cookies
-        const cookies = response.headers.get('set-cookie');
-        if (cookies) {
-            this.cookieJar = cookies;
-        }
+        try {
+            const response = await fetch(url, options);
+            debug(`Réponse reçue: ${response.status} ${response.statusText}`, {
+                headers: Object.fromEntries(response.headers.entries())
+            });
+            
+            // Sauvegarder les nouveaux cookies
+            const cookies = response.headers.get('set-cookie');
+            if (cookies) {
+                this.cookieJar = cookies;
+                debug('Nouveaux cookies sauvegardés', { cookies });
+            }
 
-        return response;
+            return response;
+        } catch (error) {
+            debug('Erreur fetch', { error: error.message });
+            throw error;
+        }
     }
 }
 
@@ -127,20 +150,27 @@ export const edt = async (classe, startDate, endDate) => {
 }
 
 export const connection = async (username, password) => {
+    debug('Tentative de connexion', { username });
+
     try {
-        // 1. Récupérer le token JWT
         const loginUrl = "https://cas2.uvsq.fr/cas/login?service=https%3A%2F%2Fbulletins.iut-velizy.uvsq.fr%2Fservices%2FdoAuth.php%3Fhref%3Dhttps%253A%252F%252Fbulletins.iut-velizy.uvsq.fr%252F";
+        
+        // 1. Récupération du token
+        debug('Récupération de la page de login');
         const loginPage = await session.fetch(loginUrl);
         const pageText = await loginPage.text();
         const tokenMatch = pageText.match(/name="execution" value="([^"]+)"/);
         const token = tokenMatch ? tokenMatch[1] : null;
 
         if (!token) {
+            debug('Token non trouvé dans la page');
             return { error: "Impossible de récupérer le token" };
         }
+        debug('Token récupéré', { token });
 
-        // 2. Effectuer la connexion
-        await session.fetch(loginUrl, {
+        // 2. Connexion
+        debug('Envoi des identifiants');
+        const loginResponse = await session.fetch(loginUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -153,8 +183,13 @@ export const connection = async (username, password) => {
                 geolocation: ""
             }).toString()
         });
+        debug('Réponse login reçue', { 
+            status: loginResponse.status,
+            url: loginResponse.url
+        });
 
-        // 3. Récupérer les données
+        // 3. Récupération des données
+        debug('Récupération des données utilisateur');
         const dataUrl = "https://bulletins.iut-velizy.uvsq.fr/services/data.php?q=dataPremi%C3%A8reConnexion";
         const response = await session.fetch(dataUrl, {
             method: 'POST',
@@ -166,13 +201,21 @@ export const connection = async (username, password) => {
 
         const text = await response.text();
         const data = JSON.parse(text.replace(/\n/g, ""));
+        
+        debug('Données reçues', { 
+            hasRedirect: "redirect" in data,
+            dataKeys: Object.keys(data)
+        });
 
         return "redirect" in data 
             ? { error: "Identifiants invalides" }
             : data;
 
     } catch (error) {
-        console.error("Erreur lors de la connexion:", error);
+        debug('Erreur de connexion', { 
+            error: error.message,
+            stack: error.stack
+        });
         return { error: "Erreur de connexion" };
     }
 };
