@@ -1,3 +1,36 @@
+// Création d'une classe pour gérer la session
+class Session {
+    constructor() {
+        this.cookieJar = '';
+    }
+
+    async fetch(url, options = {}) {
+        // Ajouter les cookies à la requête
+        if (this.cookieJar) {
+            options.headers = {
+                ...options.headers,
+                'Cookie': this.cookieJar
+            };
+        }
+
+        // Configurer pour suivre les redirections
+        options.redirect = 'follow';
+        
+        const response = await fetch(url, options);
+        
+        // Sauvegarder les nouveaux cookies
+        const cookies = response.headers.get('set-cookie');
+        if (cookies) {
+            this.cookieJar = cookies;
+        }
+
+        return response;
+    }
+}
+
+// Instance globale de session
+const session = new Session();
+
 // --- Fonction pour lire les données de l'emploi du temps ---
 export const edt = async (classe, startDate, endDate) => {
     const endPointUrl = "https://edt.iut-velizy.uvsq.fr/Home/GetCalendarData";
@@ -97,7 +130,7 @@ export const connection = async (username, password) => {
     try {
         // 1. Récupérer le token JWT
         const loginUrl = "https://cas2.uvsq.fr/cas/login?service=https%3A%2F%2Fbulletins.iut-velizy.uvsq.fr%2Fservices%2FdoAuth.php%3Fhref%3Dhttps%253A%252F%252Fbulletins.iut-velizy.uvsq.fr%252F";
-        const loginPage = await fetch(loginUrl);
+        const loginPage = await session.fetch(loginUrl);
         const pageText = await loginPage.text();
         const tokenMatch = pageText.match(/name="execution" value="([^"]+)"/);
         const token = tokenMatch ? tokenMatch[1] : null;
@@ -107,7 +140,7 @@ export const connection = async (username, password) => {
         }
 
         // 2. Effectuer la connexion
-        await fetch(loginUrl, {
+        await session.fetch(loginUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -123,7 +156,7 @@ export const connection = async (username, password) => {
 
         // 3. Récupérer les données
         const dataUrl = "https://bulletins.iut-velizy.uvsq.fr/services/data.php?q=dataPremi%C3%A8reConnexion";
-        const response = await fetch(dataUrl, {
+        const response = await session.fetch(dataUrl, {
             method: 'POST',
             headers: {
                 "Accept-Language": "fr-FR,fr;q=0.9",
@@ -143,3 +176,6 @@ export const connection = async (username, password) => {
         return { error: "Erreur de connexion" };
     }
 };
+
+// Export de la session pour une utilisation dans d'autres fichiers
+export const getSession = () => session;
