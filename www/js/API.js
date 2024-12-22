@@ -92,74 +92,54 @@ export const edt = async (classe, startDate, endDate) => {
 
     return cours;
 }
-// --- Classe pour se connecter et récupérer les bulletins ---
-class BulletinClient {
-    constructor(username, password) {
-        this.username = username;
-        this.password = password;
-    }
-
-    async login() {
-        try {
-            // 1. Récupérer les cookies
-            const cookieUrl = "https://bulletins.iut-velizy.uvsq.fr/services/data.php?q=dataPremi%C3%A8reConnexion";
-            await fetch(cookieUrl, { method: 'POST' });
-
-            // 2. Récupérer le token JWT
-            const loginUrl = "https://cas2.uvsq.fr/cas/login?service=https%3A%2F%2Fbulletins.iut-velizy.uvsq.fr%2Fservices%2FdoAuth.php%3Fhref%3Dhttps%253A%252F%252Fbulletins.iut-velizy.uvsq.fr%252F";
-            const loginPage = await fetch(loginUrl);
-            const pageText = await loginPage.text();
-            const tokenMatch = pageText.match(/name="execution" value="([^"]+)"/);
-            const token = tokenMatch ? tokenMatch[1] : null;
-
-            // 3. Effectuer la connexion
-            const payload = {
-                username: this.username,
-                password: this.password,
-                execution: token,
-                _eventId: "submit",
-                geolocation: "",
-            };
-            await fetch(loginUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: new URLSearchParams(payload).toString()
-            });
-        } catch (error) {
-            console.error("Erreur lors de la connexion :", error.message);
-        }
-    }
-
-    async fetchDatas() {
-        const url = "https://bulletins.iut-velizy.uvsq.fr/services/data.php?q=dataPremi%C3%A8reConnexion";
-        const headers = {
-            "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        };
-
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: headers
-            });
-            const text = await response.text();
-            return JSON.parse(text.replace(/\n/g, ""));
-        } catch (error) {
-            console.error("Erreur lors de la récupération des données :", error.message);
-            return null;
-        }
-    }
-}
 
 export const connection = async (username, password) => {
-    const client = new BulletinClient(username, password);
-    await client.login();
-    const data = await client.fetchDatas();
-    if ("redirect" in data) {
-        return { "error": "Identifiants invalides" };
-    } else {
-        return data;
+    try {
+        // 1. Récupérer le token JWT
+        const loginUrl = "https://cas2.uvsq.fr/cas/login?service=https%3A%2F%2Fbulletins.iut-velizy.uvsq.fr%2Fservices%2FdoAuth.php%3Fhref%3Dhttps%253A%252F%252Fbulletins.iut-velizy.uvsq.fr%252F";
+        const loginPage = await fetch(loginUrl);
+        const pageText = await loginPage.text();
+        const tokenMatch = pageText.match(/name="execution" value="([^"]+)"/);
+        const token = tokenMatch ? tokenMatch[1] : null;
+
+        if (!token) {
+            return { error: "Impossible de récupérer le token" };
+        }
+
+        // 2. Effectuer la connexion
+        await fetch(loginUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: new URLSearchParams({
+                username,
+                password,
+                execution: token,
+                _eventId: "submit",
+                geolocation: ""
+            }).toString()
+        });
+
+        // 3. Récupérer les données
+        const dataUrl = "https://bulletins.iut-velizy.uvsq.fr/services/data.php?q=dataPremi%C3%A8reConnexion";
+        const response = await fetch(dataUrl, {
+            method: 'POST',
+            headers: {
+                "Accept-Language": "fr-FR,fr;q=0.9",
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+            }
+        });
+
+        const text = await response.text();
+        const data = JSON.parse(text.replace(/\n/g, ""));
+
+        return "redirect" in data 
+            ? { error: "Identifiants invalides" }
+            : data;
+
+    } catch (error) {
+        console.error("Erreur lors de la connexion:", error);
+        return { error: "Erreur de connexion" };
     }
-}
+};
