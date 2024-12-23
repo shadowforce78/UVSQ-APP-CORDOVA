@@ -9,6 +9,7 @@ const debug = (message, data = null) => {
 class Session {
     constructor() {
         this.cookieJar = new Map();
+        this.csrfToken = null;
         debug('Session initialisée');
     }
 
@@ -35,30 +36,40 @@ class Session {
             cookiesExist: this.cookieJar.size > 0
         });
 
+        // Configuration de base pour toutes les requêtes
+        const baseOptions = {
+            mode: options.method === 'POST' ? 'no-cors' : 'cors', // Désactiver CORS pour POST
+            credentials: 'include',
+            redirect: 'manual',
+            ...options,
+            headers: {
+                'Accept': 'application/json, text/html, */*',
+                'Accept-Language': 'fr-FR,fr;q=0.9',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                ...options.headers
+            }
+        };
+
         // Ajouter les cookies à la requête
         if (this.cookieJar.size > 0) {
-            options.headers = {
-                ...options.headers,
-                'Cookie': this.getCookieString()
-            };
+            baseOptions.headers['Cookie'] = this.getCookieString();
         }
 
-        // Configurer la gestion des redirections
-        options.redirect = 'manual';
-        options.credentials = 'include';
-        
         try {
-            const response = await fetch(url, options);
+            const response = await fetch(url, baseOptions);
             debug(`Réponse reçue: ${response.status} ${response.statusText}`, {
-                headers: Object.fromEntries(response.headers.entries())
+                headers: Object.fromEntries(response.headers.entries()),
+                url: response.url
             });
-            
+
             // Gérer les cookies de la réponse
             const cookies = response.headers.get('set-cookie');
             if (cookies) {
                 this.parseCookies(cookies);
                 debug('Cookies mis à jour', { 
-                    cookieCount: this.cookieJar.size
+                    cookieCount: this.cookieJar.size,
+                    cookies: this.getCookieString()
                 });
             }
 
@@ -67,9 +78,12 @@ class Session {
                 const location = response.headers.get('location');
                 if (location) {
                     debug('Redirection vers', { location });
+                    // Attendre un peu avant de suivre la redirection
+                    await new Promise(resolve => setTimeout(resolve, 100));
                     return this.fetch(location, {
                         ...options,
-                        method: 'GET'
+                        method: 'GET',
+                        body: undefined
                     });
                 }
             }
@@ -187,68 +201,52 @@ export const edt = async (classe, startDate, endDate) => {
 
 export const connection = async (username, password) => {
     debug('Tentative de connexion', { username });
-    session.clearCookies(); // Reset cookies before new connection attempt
+    session.clearCookies();
 
     try {
-        const loginUrl = "https://cas2.uvsq.fr/cas/login?service=https%3A%2F%2Fbulletins.iut-velizy.uvsq.fr%2Fservices%2FdoAuth.php%3Fhref%3Dhttps%253A%252F%252Fbulletins.iut-velizy.uvsq.fr%252F";
+        const baseUrl = "https://bulletins.iut-velizy.uvsq.fr";
+        const casUrl = "https://cas2.uvsq.fr/cas/login";
+        const serviceUrl = encodeURIComponent(`${baseUrl}/services/doAuth.php`);
         
-        // 1. Récupération du token
-        debug('Récupération de la page de login');
-        const loginPage = await session.fetch(loginUrl);
-        const pageText = await loginPage.text();
+        // 1. Initialiser la session avec le service cible
+        await session.fetch(`${baseUrl}/services/doAuth.php`);
+        
+        // 2. Obtenir le formulaire de login et le token
+        const loginPageResponse = await session.fetch(`${casUrl}?service=${serviceUrl}`);
+        const pageText = await loginPageResponse.text();
         const tokenMatch = pageText.match(/name="execution" value="([^"]+)"/);
         const token = tokenMatch ? tokenMatch[1] : null;
 
         if (!token) {
-            debug('Token non trouvé dans la page');
+            debug('Token non trouvé');
             return { error: "Impossible de récupérer le token" };
         }
-        debug('Token récupéré', { token });
 
-        // 2. Connexion
-        debug('Envoi des identifiants');
-        const loginResponse = await session.fetch(loginUrl, {
+        // 3. Soumission des identifiants avec tous les champs nécessaires
+        const formData = new URLSearchParams({
+            username,
+            password,
+            execution: token,
+            _eventId: "submit",
+            geolocation: "",
+            submit: "SE CONNECTER"
+        });
+
+        const loginResponse = await session.fetch(`${casUrl}?service=${serviceUrl}`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'text/html',
+                'Origin': 'https://cas2.uvsq.fr',
+                'Referer': `${casUrl}?service=${serviceUrl}`,
+                'Upgrade-Insecure-Requests': '1'
             },
-            body: new URLSearchParams({
-                username,
-                password,
-                execution: token,
-                _eventId: "submit",
-                geolocation: ""
-            }).toString()
-        });
-        debug('Réponse login reçue', { 
-            status: loginResponse.status,
-            url: loginResponse.url
+            body: formData.toString()
         });
 
-        // Suivre explicitement la redirection après le POST
-        const finalResponse = await session.fetch(loginResponse.headers.get('location') || loginUrl);
-        if (!finalResponse.ok) {
-            return { error: "Erreur lors de la redirection" };
-        }
-
-        // 3. Récupération des données
-        debug('Récupération des données utilisateur');
-        const dataUrl = "https://bulletins.iut-velizy.uvsq.fr/services/data.php?q=dataPremi%C3%A8reConnexion";
-        const response = await session.fetch(dataUrl, {
-            method: 'POST',
-            headers: {
-                "Accept-Language": "fr-FR,fr;q=0.9",
-                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-            }
-        });
-
-        const text = await response.text();
-        const data = JSON.parse(text.replace(/\n/g, ""));
-        
-        debug('Données reçues', { 
-            hasRedirect: "redirect" in data,
-            dataKeys: Object.keys(data)
-        });
+        // 4. Vérification finale
+        const verifyResponse = await session.fetch(`${baseUrl}/services/data.php?q=dataPremi%C3%A8reConnexion`);
+        const data = await verifyResponse.json();
 
         return "redirect" in data 
             ? { error: "Identifiants invalides" }

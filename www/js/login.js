@@ -13,7 +13,6 @@ function showPassword() {
 document.getElementById('showpwd').addEventListener('change', showPassword);
 
 // Gestion du thème
-// Gestion du thème
 const themeToggle = document.getElementById('themeToggle');
 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
 
@@ -25,7 +24,7 @@ function setTheme(isDark) {
 
 // Initialiser le thème
 const savedTheme = localStorage.getItem('theme');
-const initialTheme = savedTheme 
+const initialTheme = savedTheme
     ? savedTheme === 'dark'
     : prefersDark.matches;
 setTheme(initialTheme);
@@ -40,7 +39,7 @@ themeToggle.addEventListener('click', () => {
     // Vérifier s'il existe des identifiants stockés
     const storedId = localStorage.getItem('userId');
     const storedPassword = localStorage.getItem('userPassword');
-    
+
     if (storedId && storedPassword) {
         try {
             const result = await connection(storedId, storedPassword);
